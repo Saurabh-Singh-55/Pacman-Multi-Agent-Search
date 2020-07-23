@@ -93,9 +93,6 @@ class ReflexAgent(Agent):
           return 100000-util.manhattanDistance( y,newPos)
         return successorGameState.getScore()
 
-        "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
-
 def scoreEvaluationFunction(currentGameState):
     """
     This default evaluation function just returns the score of the state.
@@ -155,34 +152,39 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        v = float("-inf")
+        a = Directions.EAST
+        legalMoves = gameState.getLegalActions(0)
+        for action in legalMoves:
+          x= self.value([gameState.generateSuccessor(0, action),0],1)
+          if v < x:
+            v = x
+            a = action
+        return a
 
-class AlphaBetaAgent(MultiAgentSearchAgent):
-    """
-    Your minimax agent with alpha-beta pruning (question 3)
-    """
+    def value(self,state,agentIndex):
+      if state[0].isWin() or state[0].isLose() or self.depth == state[1]:
+        return self.evaluationFunction(state[0])
+      if agentIndex == 0 :
+        return self.maxValue(state)
+      else :
+        return self.minValue(state,agentIndex)
 
-    def getAction(self, gameState):
-        """
-        Returns the minimax action using self.depth and self.evaluationFunction
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+    def minValue(self,state,agentIndex):
+      v = float("inf")
+      for action in state[0].getLegalActions(agentIndex):
+        if agentIndex == state[0].getNumAgents()-1:
+          v = min( v, self.value( [state[0].generateSuccessor(agentIndex, action),state[1]+1] ,0) )
+        else:
+          v = min( v, self.value( [state[0].generateSuccessor(agentIndex, action),state[1]] ,agentIndex+1 ))
+      return v
 
-class ExpectimaxAgent(MultiAgentSearchAgent):
-    """
-      Your expectimax agent (question 4)
-    """
+    def maxValue(self,state):
+      v = float("-inf")
+      for action in state[0].getLegalActions(0):
+        v = max( v, self.value([state[0].generateSuccessor(0, action),state[1]] ,1))
+      return v
 
-    def getAction(self, gameState):
-        """
-        Returns the expectimax action using self.depth and self.evaluationFunction
-
-        All ghosts should be modeled as choosing uniformly at random from their
-        legal moves.
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
 
 def betterEvaluationFunction(currentGameState):
     """
