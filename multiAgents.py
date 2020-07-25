@@ -256,9 +256,16 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legalMoves = gameState.getLegalActions(0)
         for action in legalMoves:
           x= self.value([gameState.generateSuccessor(0, action),0],1)
+          # print(action)
+          # print(x)
           if v < x:
             v = x
             a = action
+          elif v==x:
+            if a == Directions.STOP:
+              a = action
+        # print("/////////////")
+        # print(a)
         return a
 
     def value(self,state,agentIndex):
@@ -272,6 +279,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     def expValue(self,state,agentIndex):
       avg=0
       v = float("inf")
+      l=state[0].getLegalActions(agentIndex)
       for action in state[0].getLegalActions(agentIndex):
         if agentIndex == state[0].getNumAgents()-1:
           avg = avg + min( v, self.value( [state[0].generateSuccessor(agentIndex, action),state[1]+1] ,0) )
@@ -293,6 +301,75 @@ def betterEvaluationFunction(currentGameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
+    newGhostStates = currentGameState.getGhostStates()
+    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+    Food=  currentGameState.getFood()
+    pallet = currentGameState.getCapsules()
+    value=0
+    g=0
+    startPosition = currentGameState.getPacmanPosition()
+    from util import Queue
+    s=Queue()
+    start=startPosition
+    visited_state=[start]
+    data=[[start],[],0]
+    s.push(data)
+    while not s.isEmpty():
+        current=s.pop()
+        current_node=current[0][-1]
+        if current_node in pallet:
+            value= current[2]
+            break
+        if Food[current_node[0]][current_node[1]]==True:
+            value = current[2]
+            break
+        for ghostState in newGhostStates:
+          if current_node==ghostState.getPosition():
+              g =min(g,current[2])
+              for ghost in newScaredTimes:
+                if ghost>0:
+                  return -(value + g*1000)+currentGameState.getScore()
+        
+        node=current_node
+        w = currentGameState.getWalls()
+        nodes=[]
+        if w[node[0]][node[1]+1]==False:
+            nodes.append( [ (node[0],node[1]+1),Directions.EAST,1 ] )
+        if w[node[0]][node[1]-1]==False:
+            nodes.append( [ (node[0],node[1]-1),Directions.EAST,1 ] )
+        if w[node[0]+1][node[1]]==False:
+            nodes.append( [ (node[0]+1,node[1]),Directions.EAST,1 ] )
+        if w[node[0]-1][node[1]]==False:
+            nodes.append( [ (node[0]-1,node[1]),Directions.EAST,1 ] )
+
+        for leaf in nodes:
+            next_state=leaf[0]
+            next_direction=leaf[1]
+            next_cost=leaf[2]
+            if next_state not in visited_state:
+                visited_state.append(next_state)
+                next_states=current[0][:]
+                next_states.append(next_state)
+                next_directions=current[1][:]
+                next_directions.append(next_direction)
+                new_cost=current[2]+next_cost
+                next_data=[next_states,next_directions,new_cost]
+                s.push(next_data)
+    # print(value,end=">>")
+    # print(g,end="^^")
+    # print(currentGameState.getScore())
+    # c=0
+    # for f in Food:
+    #   if f==True:
+    #     c=c+1
+    # return currentGameState.getScore() - value
+    scared =0
+    for ghost in newScaredTimes:
+      if ghost>0:
+        scared=200
+
+    return -(value + -1*g)*3+currentGameState.getScore() + scared
+
     util.raiseNotDefined()
 
 # Abbreviation
